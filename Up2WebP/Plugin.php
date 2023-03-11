@@ -286,7 +286,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
     private static function getNewName($name)
     {
         $info = pathinfo($name);
-        return $info['basename'] . '.webp';
+        return $info['filename'] . '.webp';
     }
 
     /**
