@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  * @package Up2WebP
  * @author NKXingXh
- * @version 1.0.0
+ * @version 1.0.1
  * @link https://blog.nkxingxh.top/
  * @license https://www.gnu.org/licenses/agpl-3.0.html
  */
@@ -112,6 +112,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
 
         $exts = explode(',', Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->exts);
         if ($up2webp = in_array(strtolower($ext), $exts)) {
+            //file_put_contents(__DIR__ . '/logs.txt', "ext in list\n", FILE_APPEND | LOCK_EX);
             //获取文件名
             $fileName_webp = sprintf('%u', crc32(uniqid())) . '.webp';
             $path_webp = $path . '/' . $fileName_webp;
@@ -123,14 +124,17 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
         $path = $path . '/' . $fileName;
 
         if (isset($file['tmp_name'])) {
+            //file_put_contents(__DIR__ . '/logs.txt', "tmp_name is set\n", FILE_APPEND | LOCK_EX);
             if ($up2webp) {
                 $result = self::image2webp($file['tmp_name'], $path_webp, $ext);
                 if ($result === false) return false;
                 $up2webp = $result === true;
+                //file_put_contents(__DIR__ . '/logs.txt', "image2webp result is $result ($up2webp)\n", FILE_APPEND | LOCK_EX);
             }
 
             //移动上传文件
-            elseif (!$up2webp && !@move_uploaded_file($file['tmp_name'], $path)) {
+            if (!$up2webp && !@move_uploaded_file($file['tmp_name'], $path)) {
+                //file_put_contents(__DIR__ . '/logs.txt', "move upload file failed\n", FILE_APPEND | LOCK_EX);
                 return false;
             }
         } elseif (isset($file['bytes'])) {
@@ -142,7 +146,9 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             if ($up2webp) {
                 $result = self::image2webp($path, $path_webp, $ext);
                 if ($result === false) return false;
-                if ($up2webp = $result === true) {
+                $up2webp = $result === true;
+
+                if ($up2webp) {
                     //成功压缩删除老文件
                     unlink($path);
                 }
@@ -156,7 +162,9 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             if ($up2webp) {
                 $result = self::image2webp($path, $path_webp, $ext);
                 if ($result === false) return false;
-                if ($up2webp = $result === true) {
+                $up2webp = $result === true;
+
+                if ($up2webp) {
                     //成功压缩删除老文件
                     unlink($path);
                 }
@@ -178,6 +186,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             $file['size'] = filesize($path);
             if ($file['size'] <= 0) {
                 unlink($path);
+                return false;
             }
         }
 
@@ -340,7 +349,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
      * @param string input 输入文件路径
      * @param string output 输出文件路径
      * @param string ext 文件拓展名 (为空将尝试判断输入文件)
-     * @param int min_size 处理阈值 (传入复数无视一切限制, 包括阈值、处理后大小等)
+     * @param int min_size 处理阈值 (传入复数无视一切限制, 包括阈值、处理后大小等) 单位: 字节
      * @param int quality 质量
      * 
      * @return bool|int true 成功, false 失败, 0 变大了, null 未达到阈值
@@ -348,10 +357,11 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
     private static function image2webp($input, $output, $ext = '', $min_size = null, $quality = null)
     {
         if (empty($min_size)) {
-            $min_size = (int) Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->min_size;
+            $min_size = (int) Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->min_size * 1024;
         }
 
         $fileSize = filesize($input);
+        //file_put_contents(__DIR__ . '/logs.txt', "[image2webp] min_size is $min_size, file size is $fileSize\n", FILE_APPEND | LOCK_EX);
         if ($min_size > 0 && $fileSize < $min_size) return null;
 
         if (empty($quality)) {
@@ -431,7 +441,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                     throw new Typecho\Widget\Exception(_t('file is empty'));
                     return false;
                 }
-                if ($min_size > 0 && $newFileSize > $fileSize) {
+                if ($newFileSize > $fileSize) {
                     unlink($output);
                     return 0;
                 }
