@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  * @package Up2WebP
  * @author NKXingXh
- * @version 1.0.1
+ * @version 1.0.2
  * @link https://blog.nkxingxh.top/
  * @license https://www.gnu.org/licenses/agpl-3.0.html
  */
