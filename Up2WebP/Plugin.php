@@ -11,7 +11,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * @license https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInterface
+class Up2WebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface
 {
     /**
      * 启用插件方法,如果启用失败,直接抛出异常
@@ -22,8 +22,8 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
      */
     public static function activate()
     {
-        Typecho\Plugin::factory('Widget_Upload')->uploadHandle = array('Up2WebP_Plugin', 'uploadHandle');
-        Typecho\Plugin::factory('Widget_Upload')->modifyHandle = array('Up2WebP_Plugin', 'modifyHandle');
+        Typecho_Plugin::factory('Widget_Upload')->uploadHandle = array('Up2WebP_Plugin', 'uploadHandle');
+        Typecho_Plugin::factory('Widget_Upload')->modifyHandle = array('Up2WebP_Plugin', 'modifyHandle');
     }
 
     /**
@@ -48,7 +48,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
      */
     public static function config($form)
     {
-        $exts = new Typecho\Widget\Helper\Form\Element\Text(
+        $exts = new Typecho_Widget_Helper_Form_Element_Text(
             'exts',
             NULL,
             'bmp,jpeg,jpg,png,wbmp',
@@ -56,7 +56,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             _t('拓展名在该列表内的文件才进行处理。不要使用大写, 拓展名之间用半角逗号隔开, 不要加空格<br><b>本插件需要 PHP 安装 GD 库才能正常运行</b>')
         );
 
-        $min_size = new Typecho\Widget\Helper\Form\Element\Text(
+        $min_size = new Typecho_Widget_Helper_Form_Element_Text(
             'min_size',
             NULL,
             '32',
@@ -64,7 +64,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             _t('超过该大小的图片才进行压缩, 单位 KB')
         );
 
-        $quality = new Typecho\Widget\Helper\Form\Element\Text(
+        $quality = new Typecho_Widget_Helper_Form_Element_Text(
             'quality',
             NULL,
             '85',
@@ -97,8 +97,8 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             return false;
         }
 
-        $date = new Typecho\Date();
-        $path = Typecho\Common::url(
+        $date = new Typecho_Date();
+        $path = Typecho_Common::url(
             defined('__TYPECHO_UPLOAD_DIR__') ? __TYPECHO_UPLOAD_DIR__ : self::UPLOAD_DIR,
             defined('__TYPECHO_UPLOAD_ROOT_DIR__') ? __TYPECHO_UPLOAD_ROOT_DIR__ : __TYPECHO_ROOT_DIR__
         ) . '/' . $date->year . '/' . $date->month;
@@ -110,7 +110,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             }
         }
 
-        $exts = explode(',', Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->exts);
+        $exts = explode(',', Typecho_Widget::widget('Widget_Options')->plugin('Up2WebP')->exts);
         if ($up2webp = in_array(strtolower($ext), $exts)) {
             //file_put_contents(__DIR__ . '/logs.txt', "ext in list\n", FILE_APPEND | LOCK_EX);
             //获取文件名
@@ -197,7 +197,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                 . '/' . $date->year . '/' . $date->month . '/' . $fileName,
             'size' => $file['size'],
             'type' => $ext,
-            'mime' => Typecho\Common::mimeContentType($path)
+            'mime' => Typecho_Common::mimeContentType($path)
         ];
     }
 
@@ -205,7 +205,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
     {
         $ext = self::getSafeName($file['name']);
 
-        $exts = explode(',', Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->exts);
+        $exts = explode(',', Typecho_Widget::widget('Widget_Options')->plugin('Up2WebP')->exts);
         $up2webp = strtolower($content['attachment']->type) == 'webp' && in_array(strtolower($ext), $exts);
         unset($exts);
 
@@ -213,7 +213,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
             return false;
         }
 
-        $path = Typecho\Common::url(
+        $path = Typecho_Common::url(
             $content['attachment']->path,
             defined('__TYPECHO_UPLOAD_ROOT_DIR__') ? __TYPECHO_UPLOAD_ROOT_DIR__ : __TYPECHO_ROOT_DIR__
         );
@@ -357,7 +357,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
     private static function image2webp($input, $output, $ext = '', $min_size = null, $quality = null)
     {
         if (empty($min_size)) {
-            $min_size = (int) Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->min_size * 1024;
+            $min_size = (int) Typecho_Widget::widget('Widget_Options')->plugin('Up2WebP')->min_size * 1024;
         }
 
         $fileSize = filesize($input);
@@ -365,7 +365,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
         if ($min_size > 0 && $fileSize < $min_size) return null;
 
         if (empty($quality)) {
-            $quality = (int) Typecho\Widget::widget('Widget_Options')->plugin('Up2WebP')->quality;
+            $quality = (int) Typecho_Widget::widget('Widget_Options')->plugin('Up2WebP')->quality;
         }
 
         if (function_exists('exif_imagetype')) {
@@ -377,7 +377,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                 unset($info);
             }
             if (empty($ext)) {
-                throw new Typecho\Widget\Exception(_t('No exif lib found and the file extension name is empty! Unable to determine file type'));
+                throw new Typecho_Widget_Exception(_t('No exif lib found and the file extension name is empty! Unable to determine file type'));
                 return false;
             }
             switch (strtolower($ext)) {
@@ -401,7 +401,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                     $imageType = IMAGETYPE_WEBP;
                     break;
                 default:
-                    throw new Typecho\Widget\Exception(_t('No exif lib found and this extension type is not supported'));
+                    throw new Typecho_Widget_Exception(_t('No exif lib found and this extension type is not supported'));
                     return false;
             }
         }
@@ -431,14 +431,14 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                 break;
         }
         if (empty($image)) {
-            throw new Typecho\Widget\Exception(_t('Failed to read image! Maybe the image type is not supported'));
+            throw new Typecho_Widget_Exception(_t('Failed to read image! Maybe the image type is not supported'));
             return false;
         } else {
             if (imagewebp($image, $output, $quality)) {
                 $newFileSize = filesize($output);
                 if ($newFileSize <= 0) {
                     unlink($output);
-                    throw new Typecho\Widget\Exception(_t('file is empty'));
+                    throw new Typecho_Widget_Exception(_t('file is empty'));
                     return false;
                 }
                 if ($newFileSize > $fileSize) {
@@ -448,7 +448,7 @@ class Up2WebP_Plugin extends Widget\Upload implements \Typecho\Plugin\PluginInte
                 return true;
             } else {
                 unlink($output);
-                throw new Typecho\Widget\Exception(_t('imagewebp failed'));
+                throw new Typecho_Widget_Exception(_t('imagewebp failed'));
                 return false;
             }
         }
