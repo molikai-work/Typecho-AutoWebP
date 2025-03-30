@@ -49,8 +49,8 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             'exts',
             NULL,
             'jpg,jpeg,png,bmp,wbmp',
-            _t('图片拓展名'),
-            _t('拓展名在该列表内的文件才进行处理。不要使用大写, 拓展名之间用半角逗号隔开, 不要加空格<br><b>本插件需要 PHP 安装 GD 库才能正常运行</b>')
+            _t('图片扩展名'),
+            _t('扩展名在该列表内的文件才进行处理。不要使用大写, 扩展名之间用半角逗号隔开, 不要加空格<br><b>本插件需要 PHP 安装 GD 库才能正常运行</b>')
         );
 
         $min_size = new Typecho_Widget_Helper_Form_Element_Text(
@@ -413,7 +413,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
      * 
      * @param string input 输入文件路径
      * @param string output 输出文件路径
-     * @param string ext 文件拓展名 (为空将尝试判断输入文件)
+     * @param string ext 文件扩展名 (为空将尝试判断输入文件)
      * @param int min_size 处理阈值 (传入复数无视一切限制, 包括阈值、处理后大小等) 单位: 字节
      * @param int quality 质量
      * 
