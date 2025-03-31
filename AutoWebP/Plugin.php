@@ -56,7 +56,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
         $min_size = new Typecho_Widget_Helper_Form_Element_Text(
             'min_size',
             NULL,
-            '256',
+            '0',
             _t('压缩阈值'),
             _t('超过该大小的图片才进行压缩, 单位 KB')
         );
@@ -685,5 +685,5 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             throw new Typecho_Widget_Exception(_t('imagewebp failed'));
             return false;
         }
-    }    
+    }
 }
