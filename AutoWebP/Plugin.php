@@ -4,7 +4,7 @@
  *
  * @package AutoWebP
  * @author molikai-work
- * @version 1.1.0
+ * @version 1.2.0
  * @link https://github.com/molikai-work/Typecho-AutoWebP
  * @license https://www.gnu.org/licenses/agpl-3.0.html
  */
@@ -15,7 +15,7 @@ if (!defined("__TYPECHO_ROOT_DIR__")) {
 
 class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface {
     /**
-     * 启用插件方法,如果启用失败,直接抛出异常
+     * 启用插件方法，如果启用失败，将抛出异常
      *
      * @static
      * @access public
@@ -28,7 +28,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
     }
 
     /**
-     * 禁用插件方法,如果禁用失败,直接抛出异常
+     * 禁用插件方法，如果禁用失败，将抛出异常
      *
      * @static
      * @access public
@@ -86,10 +86,106 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             _t('选择上传图片转换为 WebP 时的文件命名方式')
         );
 
+        $watermark_text = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_text',
+            NULL,
+            '',
+            _t('水印文本'),
+            _t('输入需要添加到图片的水印文本，默认不添加。')
+        );
+
+        $watermark_color = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_color',
+            NULL,
+            '#F4F4F4',
+            _t('水印颜色'),
+            _t('使用十六进制颜色代码，如 #F4F4F4')
+        );
+
+        $watermark_opacity = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_opacity',
+            NULL,
+            '0.6',
+            _t('水印透明度'),
+            _t('输入 0 到 1 之间的数字，例如 0.6 代表 60% 透明度')
+        );
+
+        $watermark_font_size = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_font_size',
+            NULL,
+            '5',
+            _t('水印字体大小'),
+            _t('输入水印字体大小的百分比值（相对于图片较小的一边）。例如输入 5 表示字体大小为图片最小边长的 5%。')
+        );
+
+        $watermark_position = new Typecho_Widget_Helper_Form_Element_Select(
+            'watermark_position',
+            array(
+                'top-left' => '左上角',
+                'top-right' => '右上角',
+                'bottom-left' => '左下角',
+                'bottom-right' => '右下角',
+                'center' => '居中'
+            ),
+            'bottom-right',
+            _t('水印位置'),
+            _t('选择水印在图片中的位置')
+        );
+
+        $watermark_margin_top = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_margin_top',
+            NULL,
+            '20',
+            _t('水印上边距'),
+            _t('以像素为单位')
+        );
+
+        $watermark_margin_bottom = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_margin_bottom',
+            NULL,
+            '20',
+            _t('水印下边距'),
+            _t('以像素为单位')
+        );
+
+        $watermark_margin_left = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_margin_left',
+            NULL,
+            '20',
+            _t('水印左边距'),
+            _t('以像素为单位')
+        );
+
+        $watermark_margin_right = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_margin_right',
+            NULL,
+            '20',
+            _t('水印右边距'),
+            _t('以像素为单位')
+        );
+
+        $watermark_font_file = new Typecho_Widget_Helper_Form_Element_Text(
+            'watermark_font_file',
+            NULL,
+            'SourceHanSansSC-Regular.otf',
+            _t('水印字体文件'),
+            _t('输入水印字体文件的名称，放到当前插件目录下的 font 文件夹中')
+        );
+
         $form->addInput($exts);
         $form->addInput($min_size);
         $form->addInput($quality);
-        $form->addInput($filename_type);        
+        $form->addInput($filename_type);
+        $form->addInput($watermark_text);
+        $form->addInput($watermark_color);
+        $form->addInput($watermark_opacity);
+        $form->addInput($watermark_font_size);
+        $form->addInput($watermark_position);
+        $form->addInput($watermark_margin_top);
+        $form->addInput($watermark_margin_bottom);
+        $form->addInput($watermark_margin_left);
+        $form->addInput($watermark_margin_right);
+        $form->addInput($watermark_font_file);
     }
 
     /**
@@ -152,6 +248,78 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             default:
                 return sprintf('%u', crc32(uniqid())) . '.' . $ext;
         }
+    }
+
+    /**
+     * 为图片添加水印
+     * 
+     * @access private
+     * @static
+     * @param resource $image 要添加水印的图片资源
+     * @return resource 返回添加了水印的图片资源
+     * 
+     * @throws Typecho_Widget_Exception 如果字体文件不存在，将抛出异常
+     */
+    private static function addWatermark($image) {
+        $options = Typecho_Widget::widget('Widget_Options')->plugin('AutoWebP');
+        if (empty($options->watermark_text)) {
+            return $image;
+        }
+
+        $text = $options->watermark_text;
+        $color = $options->watermark_color;
+        $opacity = floatval($options->watermark_opacity);
+        $fontSizePercentage = floatval($options->watermark_font_size) / 100;
+        $position = $options->watermark_position;
+        $marginTop = intval($options->watermark_margin_top);
+        $marginBottom = intval($options->watermark_margin_bottom);
+        $marginLeft = intval($options->watermark_margin_left);
+        $marginRight = intval($options->watermark_margin_right);
+
+        $fontFile = __DIR__ . '/font/' . $options->watermark_font_file;
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        $fontSize = max(10, min($width, $height) * $fontSizePercentage);
+
+        if (!file_exists($fontFile)) {
+            throw new Typecho_Widget_Exception(_t('字体文件不存在'));        
+        }
+
+        $rgba = sscanf($color, "#%02x%02x%02x");
+        $colorAllocated = imagecolorallocatealpha($image, $rgba[0], $rgba[1], $rgba[2], (1 - $opacity) * 127);
+
+        $box = imagettfbbox($fontSize, 0, $fontFile, $text);
+        $textWidth = abs($box[4] - $box[0]);
+        $textHeight = abs($box[5] - $box[1]);
+
+        switch ($position) {
+            case 'top-left':
+                $x = $marginLeft;
+                $y = $marginTop + $textHeight;
+                break;
+            case 'top-right':
+                $x = $width - $textWidth - $marginRight;
+                $y = $marginTop + $textHeight;
+                break;
+            case 'bottom-left':
+                $x = $marginLeft;
+                $y = $height - $marginBottom;
+                break;
+            case 'bottom-right':
+                $x = $width - $textWidth - $marginRight;
+                $y = $height - $marginBottom;
+                break;
+            case 'center':
+                $x = ($width - $textWidth) / 2;
+                $y = ($height + $textHeight) / 2;
+                break;
+        }
+
+        imagettftext($image, $fontSize, 0, $x, $y, $colorAllocated, $fontFile, $text);
+
+        return $image;
     }
 
     /**
@@ -488,32 +656,34 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             case IMAGETYPE_WEBP:
                 $image = imagecreatefromwebp($input);
                 break;
-            case false:
-                break;
             default:
-                break;
+                throw new Typecho_Widget_Exception(_t('Unsupported image type'));
+                return false;
         }
+
         if (empty($image)) {
             throw new Typecho_Widget_Exception(_t('Failed to read image! Maybe the image type is not supported'));
             return false;
-        } else {
-            if (imagewebp($image, $output, $quality)) {
-                $newFileSize = filesize($output);
-                if ($newFileSize <= 0) {
-                    unlink($output);
-                    throw new Typecho_Widget_Exception(_t('file is empty'));
-                    return false;
-                }
-                if ($newFileSize > $fileSize) {
-                    unlink($output);
-                    return 0;
-                }
-                return true;
-            } else {
+        }
+
+        $image = self::addWatermark($image);
+
+        if (imagewebp($image, $output, $quality)) {
+            $newFileSize = filesize($output);
+            if ($newFileSize <= 0) {
                 unlink($output);
-                throw new Typecho_Widget_Exception(_t('imagewebp failed'));
+                throw new Typecho_Widget_Exception(_t('File is empty'));
                 return false;
             }
+            if ($newFileSize > $fileSize) {
+                unlink($output);
+                return 0;
+            }
+            return true;
+        } else {
+            unlink($output);
+            throw new Typecho_Widget_Exception(_t('imagewebp failed'));
+            return false;
         }
-    }
+    }    
 }
