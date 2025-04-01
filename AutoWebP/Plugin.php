@@ -4,7 +4,7 @@
  *
  * @package AutoWebP
  * @author molikai-work
- * @version 1.2.0
+ * @version 1.2.1
  * @link https://github.com/molikai-work/Typecho-AutoWebP
  * @license https://www.gnu.org/licenses/agpl-3.0.html
  */
@@ -50,15 +50,15 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             NULL,
             'jpg,jpeg,png,bmp,wbmp',
             _t('图片扩展名'),
-            _t('扩展名在该列表内的文件才进行处理。不要使用大写, 扩展名之间用半角逗号隔开, 不要加空格<br><b>本插件需要 PHP 安装 GD 库才能正常运行</b>')
+            _t('扩展名在该列表内的文件才会进行处理。不要使用大写，扩展名之间用半角逗号隔开，不要加空格<br><b>本插件需要 PHP 安装 GD 库才能正常运行</b>')
         );
 
         $min_size = new Typecho_Widget_Helper_Form_Element_Text(
             'min_size',
             NULL,
             '0',
-            _t('压缩阈值'),
-            _t('超过该大小的图片才进行压缩, 单位 KB')
+            _t('图片大小阈值'),
+            _t('超过该大小的图片才会进行处理，单位 KB')
         );
 
         $quality = new Typecho_Widget_Helper_Form_Element_Text(
@@ -66,7 +66,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             NULL,
             '85',
             _t('图片质量'),
-            _t('压缩后的图片质量, 1~100')
+            _t('压缩后的图片质量，1~100')
         );
 
         $filename_type = new Typecho_Widget_Helper_Form_Element_Select(
@@ -74,8 +74,8 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             array(
                 'crc32' => '默认（CRC32）',
                 'uuid' => 'UUID',
-                'sha1' => 'SHA1',
-                'md5' => 'MD5',
+                'sha1' => '文件 SHA1',
+                'md5' => '文件 MD5',
                 'timestamp' => '秒级时间戳',
                 'millisecond' => '毫秒级时间戳',
                 'random8' => '8 位随机字符串',
@@ -91,7 +91,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             NULL,
             '',
             _t('水印文本'),
-            _t('输入需要添加到图片的水印文本，默认不添加。')
+            _t('输入需要添加到图片的水印文本，默认不添加')
         );
 
         $watermark_color = new Typecho_Widget_Helper_Form_Element_Text(
@@ -608,7 +608,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
                 unset($info);
             }
             if (empty($ext)) {
-                throw new Typecho_Widget_Exception(_t('No exif lib found and the file extension name is empty! Unable to determine file type'));
+                throw new Typecho_Widget_Exception(_t(''));
                 return false;
             }
             switch (strtolower($ext)) {
@@ -632,7 +632,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
                     $imageType = IMAGETYPE_WEBP;
                     break;
                 default:
-                    throw new Typecho_Widget_Exception(_t('No exif lib found and this extension type is not supported'));
+                    throw new Typecho_Widget_Exception(_t('未找到 EXIF 库，或不支持的图像类型'));
                     return false;
             }
         }
@@ -657,12 +657,12 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
                 $image = imagecreatefromwebp($input);
                 break;
             default:
-                throw new Typecho_Widget_Exception(_t('Unsupported image type'));
+                throw new Typecho_Widget_Exception(_t('不支持的图像类型'));
                 return false;
         }
 
         if (empty($image)) {
-            throw new Typecho_Widget_Exception(_t('Failed to read image! Maybe the image type is not supported'));
+            throw new Typecho_Widget_Exception(_t('无法读取图像！也许不支持的图像类型'));
             return false;
         }
 
@@ -672,7 +672,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             $newFileSize = filesize($output);
             if ($newFileSize <= 0) {
                 unlink($output);
-                throw new Typecho_Widget_Exception(_t('File is empty'));
+                throw new Typecho_Widget_Exception(_t('文件为空'));
                 return false;
             }
             if ($newFileSize > $fileSize) {
@@ -682,7 +682,7 @@ class AutoWebP_Plugin extends Widget_Upload implements Typecho_Plugin_Interface 
             return true;
         } else {
             unlink($output);
-            throw new Typecho_Widget_Exception(_t('imagewebp failed'));
+            throw new Typecho_Widget_Exception(_t('imagewebp 失败'));
             return false;
         }
     }
